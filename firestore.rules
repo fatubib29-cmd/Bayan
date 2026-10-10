@@ -1,0 +1,128 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Deny-by-default for all collections
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isPrincipal() {
+      return isAuthenticated() && (
+        request.auth.token.role == 'principal' ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'PRINCIPAL'
+      );
+    }
+
+    function isTeacher() {
+      return isAuthenticated() && (
+        request.auth.token.role == 'teacher' ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'TEACHER'
+      );
+    }
+
+    function isStudent() {
+      return isAuthenticated() && (
+        request.auth.token.role == 'student' ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'STUDENT'
+      );
+    }
+
+    // User metadata and role storage
+    match /users/{userId} {
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isPrincipal());
+      allow write: if isPrincipal();
+    }
+
+    // Educational profiles: accessible to Principal, assigned Teacher, and the Student themselves
+    match /students/{studentId} {
+      allow read: if isPrincipal()
+        || (isTeacher() && resource.data.assignedTeacherId == request.auth.uid)
+        || (isStudent() && request.auth.uid == studentId);
+      allow write: if isPrincipal();
+
+      // CRITICAL PRIVACY ARCHITECTURE:
+      // Private guardian and personal contact records are strictly isolated.
+      // Teachers and Students can NEVER read or write this subcollection under any circumstances.
+      match /private_records/{recordId} {
+        allow read, write: if isPrincipal();
+      }
+    }
+
+    // Faculty & Teacher profiles
+    match /teachers/{teacherId} {
+      allow read: if isAuthenticated();
+      allow write: if isPrincipal();
+    }
+
+    // Daily progress records: Principal can read all, Teachers can submit & read for assigned students, Students read own
+    match /progress/{progressId} {
+      allow read: if isPrincipal()
+        || (isTeacher() && resource.data.teacherId == request.auth.uid)
+        || (isStudent() && resource.data.studentId == request.auth.uid);
+      allow create: if isPrincipal()
+        || (isTeacher() && request.resource.data.teacherId == request.auth.uid);
+      allow update, delete: if isPrincipal();
+    }
+
+    // Attendance records
+    match /attendance/{attendanceId} {
+      allow read: if isPrincipal()
+        || (isTeacher() && resource.data.teacherId == request.auth.uid)
+        || (isStudent() && resource.data.studentId == request.auth.uid);
+      allow create: if isPrincipal()
+        || (isTeacher() && request.resource.data.teacherId == request.auth.uid);
+      allow update, delete: if isPrincipal();
+    }
+
+    // Zoom classes: visible to Principal, assigned teacher, and enrolled student
+    match /zoom_classes/{classId} {
+      allow read: if isPrincipal()
+        || (isTeacher() && resource.data.teacherId == request.auth.uid)
+        || (isStudent() && (resource.data.studentId == request.auth.uid || resource.data.studentId == 'ALL'));
+      allow create, update: if isPrincipal()
+        || (isTeacher() && request.resource.data.teacherId == request.auth.uid);
+      allow delete: if isPrincipal();
+    }
+
+    // In-app direct messages between assigned teacher and student
+    match /messages/{messageId} {
+      allow read: if isAuthenticated() && (
+        resource.data.senderId == request.auth.uid ||
+        resource.data.recipientId == request.auth.uid ||
+        isPrincipal()
+      );
+      allow create: if isAuthenticated() && request.resource.data.senderId == request.auth.uid;
+      allow update, delete: if isPrincipal();
+    }
+
+    // Academy announcements
+    match /announcements/{announcementId} {
+      allow read: if isAuthenticated();
+      allow write: if isPrincipal();
+    }
+
+    // Educational content: Qaida lessons and Daily Duas
+    match /qaida_lessons/{lessonId} {
+      allow read: if isAuthenticated();
+      allow write: if isPrincipal();
+    }
+
+    match /daily_duas/{duaId} {
+      allow read: if isAuthenticated();
+      allow write: if isPrincipal();
+    }
+
+    // Immutable system audit logs
+    match /audit_logs/{logId} {
+      allow read: if isPrincipal();
+      allow create: if isAuthenticated();
+      allow update, delete: if false; // Append-only immutable log
+    }
+  }
+}

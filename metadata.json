@@ -1,0 +1,6 @@
+{
+  "name": "Jamia Al-Bayan",
+  "description": "Academy management application for Jamia Al-Bayan Global, providing secure role-based portals for Principal, Teachers, and Students.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

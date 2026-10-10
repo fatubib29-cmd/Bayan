@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Jamia Al-Bayan Global Academy Schema",
+  "description": "Firestore Data Model for Jamia Al-Bayan Global with zero-trust role segregation.",
+  "collections": {
+    "users": {
+      "description": "User accounts and role metadata",
+      "fields": {
+        "id": { "type": "string" },
+        "username": { "type": "string" },
+        "role": { "type": "string", "enum": ["PRINCIPAL", "TEACHER", "STUDENT"] },
+        "displayName": { "type": "string" },
+        "preferredLanguage": { "type": "string", "enum": ["en", "bn"] },
+        "isActive": { "type": "boolean" },
+        "linkedId": { "type": "string" }
+      }
+    },
+    "students": {
+      "description": "Student educational profile (Safe for assigned teachers)",
+      "fields": {
+        "studentId": { "type": "string" },
+        "displayName": { "type": "string" },
+        "courseTrack": { "type": "string", "enum": ["Qaida", "Ampara", "Quran"] },
+        "currentLevel": { "type": "string" },
+        "assignedTeacherId": { "type": "string" },
+        "enrollmentDate": { "type": "string" },
+        "preferredLanguage": { "type": "string" },
+        "timeZone": { "type": "string" },
+        "learningGoals": { "type": "string" },
+        "isActive": { "type": "boolean" },
+        "isArchived": { "type": "boolean" }
+      },
+      "subcollections": {
+        "private_records": {
+          "description": "Confidential guardian records (PRINCIPAL ONLY)",
+          "fields": {
+            "legalFullName": { "type": "string" },
+            "guardianName": { "type": "string" },
+            "guardianPhone": { "type": "string" },
+            "guardianEmail": { "type": "string" },
+            "homeAddress": { "type": "string" },
+            "emergencyNotes": { "type": "string" },
+            "adminNotes": { "type": "string" }
+          }
+        }
+      }
+    },
+    "teachers": {
+      "description": "Faculty staff profiles",
+      "fields": {
+        "teacherId": { "type": "string" },
+        "displayName": { "type": "string" },
+        "email": { "type": "string" },
+        "phone": { "type": "string" },
+        "specialties": { "type": "string" },
+        "isActive": { "type": "boolean" }
+      }
+    },
+    "progress": {
+      "description": "Daily student evaluations and lesson progress",
+      "fields": {
+        "studentId": { "type": "string" },
+        "teacherId": { "type": "string" },
+        "courseTrack": { "type": "string" },
+        "date": { "type": "string" },
+        "chapterLesson": { "type": "string" },
+        "skillsCovered": { "type": "string" },
+        "status": { "type": "string", "enum": ["NOT_STARTED", "IN_PROGRESS", "PRACTICING", "ACHIEVED"] },
+        "practiceCompleted": { "type": "string" },
+        "homework": { "type": "string" },
+        "teacherFeedback": { "type": "string" },
+        "submittedBy": { "type": "string" },
+        "submittedAt": { "type": "integer" }
+      }
+    },
+    "attendance": {
+      "description": "Student attendance logs",
+      "fields": {
+        "studentId": { "type": "string" },
+        "teacherId": { "type": "string" },
+        "classDate": { "type": "string" },
+        "status": { "type": "string", "enum": ["PRESENT", "ABSENT", "LATE", "EXCUSED"] },
+        "notes": { "type": "string" }
+      }
+    },
+    "zoom_classes": {
+      "description": "Live online Zoom classes schedule",
+      "fields": {
+        "title": { "type": "string" },
+        "teacherId": { "type": "string" },
+        "studentId": { "type": "string" },
+        "scheduledDateTime": { "type": "string" },
+        "durationMinutes": { "type": "integer" },
+        "zoomUrl": { "type": "string" },
+        "notes": { "type": "string" },
+        "status": { "type": "string", "enum": ["UPCOMING", "LIVE", "COMPLETED", "CANCELLED"] }
+      }
+    },
+    "announcements": {
+      "description": "Academy notices and communications",
+      "fields": {
+        "titleEn": { "type": "string" },
+        "titleBn": { "type": "string" },
+        "contentEn": { "type": "string" },
+        "contentBn": { "type": "string" },
+        "authorName": { "type": "string" },
+        "isPinned": { "type": "boolean" }
+      }
+    },
+    "qaida_lessons": {
+      "description": "Curated Arabic reading lessons",
+      "fields": {
+        "lessonNumber": { "type": "integer" },
+        "titleEn": { "type": "string" },
+        "titleBn": { "type": "string" },
+        "arabicContent": { "type": "string" },
+        "descriptionEn": { "type": "string" },
+        "descriptionBn": { "type": "string" }
+      }
+    },
+    "daily_duas": {
+      "description": "Authentic searchable duas library",
+      "fields": {
+        "category": { "type": "string" },
+        "titleEn": { "type": "string" },
+        "titleBn": { "type": "string" },
+        "arabicText": { "type": "string" },
+        "transliteration": { "type": "string" },
+        "meaningEn": { "type": "string" },
+        "meaningBn": { "type": "string" },
+        "reference": { "type": "string" }
+      }
+    },
+    "audit_logs": {
+      "description": "Immutable security and administrative actions log",
+      "fields": {
+        "action": { "type": "string" },
+        "performedBy": { "type": "string" },
+        "targetEntity": { "type": "string" },
+        "details": { "type": "string" },
+        "timestamp": { "type": "integer" }
+      }
+    }
+  }
+}
